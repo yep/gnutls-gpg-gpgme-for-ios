@@ -5,6 +5,7 @@
 #
 #  Created by Felix Schulze on 31.01.11.
 #  Copyright 2010 Felix Schulze. All rights reserved.
+#  Copyright 2012 Jahn Bertsch. All rights reserved.
 #
 #  Licensed under the Apache License, Version 2.0 (the "License");
 #  you may not use this file except in compliance with the License.
@@ -21,21 +22,20 @@
 ###########################################################################
 #  Change values here
 #
+SDKVERSION="5.1"
 VERSION="1.5.0"
-SDKVERSION="5.0"
 #
 ###########################################################################
+#  No changes required beyond this point
 #
-# Don't change anything here
 CURRENTPATH=`pwd`
 ARCHS="i386 armv6 armv7"
 
-
-##########
 set -e
 if [ ! -e libgcrypt-${VERSION}.tar.gz ]; then
 	echo "Downloading libgcrypt-${VERSION}.tar.gz"
-    curl -O ftp://ftp.gnupg.org/gcrypt/libgcrypt/libgcrypt-${VERSION}.tar.gz
+	curl -O ftp://ftp.gnupg.org/gcrypt/libgcrypt/libgcrypt-${VERSION}.tar.gz
+	echo
 else
 	echo "Using libgcrypt-${VERSION}.tar.gz"
 fi
@@ -61,17 +61,16 @@ do
 		PLATFORM="iPhoneOS"
 	fi
 	echo "Building libgcrypt for ${PLATFORM} ${SDKVERSION} ${ARCH}"
-	echo "Please stand by..."
 	tar zxf libgcrypt-${VERSION}.tar.gz -C src
 	cd src/libgcrypt-${VERSION}
 
 	if [ "${VERSION}" == "1.4.6" ] || [ "${VERSION}" == "1.5.0" ];
 	then
 		echo "Version ${VERSION} detected - Patch needed"
-		patch -p0 < ../../libgcrypt-patch-1.4.6.diff
+		patch -p0 < ../../patches/libgcrypt-patch-1.4.6.diff
 	fi
 
-	export DEVROOT="/Developer/Platforms/${PLATFORM}.platform/Developer"
+	export DEVROOT="/Applications/Xcode.app/Contents/Developer/Platforms/${PLATFORM}.platform/Developer/"
 	export SDKROOT="${DEVROOT}/SDKs/${PLATFORM}${SDKVERSION}.sdk"
 	export CC="${DEVROOT}/usr/bin/gcc -arch ${ARCH}"
 	export LD=${DEVROOT}/usr/bin/ld
@@ -89,6 +88,9 @@ do
 	mkdir -p "${CURRENTPATH}/bin/${PLATFORM}${SDKVERSION}-${ARCH}.sdk"
 
 	LOG="${CURRENTPATH}/bin/${PLATFORM}${SDKVERSION}-${ARCH}.sdk/build-libgcrypt-${VERSION}.log"
+	
+	echo "Follow the build log with: tail -f ${LOG}"
+	echo "Please stand by..."
 
 	./configure --host=${ARCH}-apple-darwin --prefix="${CURRENTPATH}/bin/${PLATFORM}${SDKVERSION}-${ARCH}.sdk" --disable-shared --enable-static --with-gpg-error-prefix="${CURRENTPATH}/bin/${PLATFORM}${SDKVERSION}-${ARCH}.sdk" >> "${LOG}" 2>&1
 
@@ -96,11 +98,10 @@ do
 	make install >> "${LOG}" 2>&1
 	cd ${CURRENTPATH}
 	rm -rf src/libgcrypt-${VERSION}
-	
 done
 
 echo "Build library..."
 lipo -create ${CURRENTPATH}/bin/iPhoneSimulator${SDKVERSION}-i386.sdk/lib/libgcrypt.a ${CURRENTPATH}/bin/iPhoneOS${SDKVERSION}-armv6.sdk/lib/libgcrypt.a ${CURRENTPATH}/bin/iPhoneOS${SDKVERSION}-armv7.sdk/lib/libgcrypt.a -output ${CURRENTPATH}/lib/libgcrypt.a
 mkdir -p ${CURRENTPATH}/include/libgcrypt
 cp -R ${CURRENTPATH}/bin/iPhoneSimulator${SDKVERSION}-i386.sdk/include/gcrypt* ${CURRENTPATH}/include/libgcrypt/
-echo "Building done."
+echo "Static library available at lib/libgcrypt.a"

@@ -1,12 +1,24 @@
-This is a tutorial for using self-compiled builds of the GnuTLS-library for iOS. You can build apps with XCode and the official SDK from Apple with this. I also made a small example-app for using the libraries with XCode and the iPhone/iPhone-Simulator.
+Build scripts for static ios libraries
+======================================
 
-@see: http://www.x2on.de/2011/02/01/gnutls-for-ios-iphone-and-ipad/
+These build scripts can be used to compile static libraries for use with iOS. You can build apps with XCode and the official SDK from Apple with this.
 
-Enjoy GnuTLS on the iPhone!
+When run, the scripts download the respective source files, do simple dependency checks and compile.
 
-I have made an iOS 4.3 XCode Project with GnuTLS 2.12.7 Libaries. The examples uses the MD5-algorithm to calculate an md5 from an UITextfield.
+The resulting libraries are universal binaries for the following platforms: i386, arm6 and arm7. This means they can be used with all iOS devices including the simulator.
 
-UPDATE 01.02.2011: Updated GnuTLS to 2.10.4: Patch needed from http://permalink.gmane.org/gmane.comp.encryption.gpg.gnutls.devel/4825
-UPDATE 19.03.2011: Updated GnuTLS to 2.10.5: Patch needed from http://permalink.gmane.org/gmane.comp.encryption.gpg.gnutls.devel/4825
-UPDATE 27.03.2011: Updated GnuTLS to 2.12.0: Force using libgcrypt
-UPDATE 20.11.2011: Updated GnuTLS to 2.12.14(excluding PCKS#11 support) build with iOS SDK 5.0
+To use the libraries, include the library from the created lib/ directory and header files from include/.
+
+Tested with iOS SDK 5.1 (XCode 4.3.1) and OS X 10.7.3.
+
+Currently supported versions:
+ * gnupg (gpg) - 1.4.11
+ * libassuan - 2.0.3
+ * libgcrypt - 1.5.0
+ * gnutls - 2.12.14
+ * gpg-error - 1.10
+ * gpgme (gpg made easy)- 1.3.1
+
+Based on https://github.com/x2on/GnuTLS-for-iOS and https://github.com/3ign0n/GnuTLS-for-iOS.
+
+There is also an example project demonstrating the use of GnuTLS at http://www.x2on.de/2011/02/01/gnutls-for-ios-iphone-and-ipad

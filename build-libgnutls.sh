@@ -5,6 +5,7 @@
 #
 #  Created by Felix Schulze on 30.01.11.
 #  Copyright 2010 Felix Schulze. All rights reserved.
+#  Copyright 2012 Jahn Bertsch. All rights reserved.
 #
 #  Licensed under the Apache License, Version 2.0 (the "License");
 #  you may not use this file except in compliance with the License.
@@ -21,21 +22,19 @@
 ###########################################################################
 #  Change values here
 #
+SDKVERSION="5.1"
 VERSION="2.12.14"
-SDKVERSION="5.0"
 #
 ###########################################################################
-#
-# Don't change anything here
+#  No changes required beyond this point
 CURRENTPATH=`pwd`
 ARCHS="i386 armv6 armv7"
 
-
-##########
 set -e
 if [ ! -e gnutls-${VERSION}.tar.bz2 ]; then
 	echo "Downloading gnutls-${VERSION}.tar.bz2"
-    curl -O ftp://ftp.gnu.org/gnu/gnutls/gnutls-${VERSION}.tar.bz2
+	curl -O ftp://ftp.gnu.org/gnu/gnutls/gnutls-${VERSION}.tar.bz2
+	echo
 else
 	echo "Using gnutls-${VERSION}.tar.bz2"
 fi
@@ -61,10 +60,10 @@ do
 		PLATFORM="iPhoneOS"
 	fi
 
-	tar zxvf gnutls-${VERSION}.tar.bz2 -C src
-	cd src/gnutls-${VERSION}
-	
 	echo "Building gnutls for ${PLATFORM} ${SDKVERSION} ${ARCH}"
+
+	tar zxf gnutls-${VERSION}.tar.bz2 -C src
+	cd src/gnutls-${VERSION}
 	
 	if [ "${VERSION}" == "2.8.6" ];
 	then
@@ -77,7 +76,7 @@ do
 	then
 		echo "Version 2.10.4 detected - Patch needed"
 		cd src
-		patch -R < ../../../gnutls-patch-${VERSION}.diff
+		patch -R < ../../../patches/gnutls-patch-${VERSION}.diff
 		cd ..
 	fi
 	
@@ -85,7 +84,7 @@ do
 	then
 		echo "Version 2.10.5 detected - Patch needed"
 		cd src
-		patch -R < ../../../gnutls-patch-2.10.4.diff
+		patch -R < ../../../patches/gnutls-patch-2.10.4.diff
 		cd ..
 	fi
 	
@@ -95,9 +94,7 @@ do
 		echo "Version 2.12.14 detected - Setting extra configure flags: " ${EXTRA_CONFIGURE_FLAGS}
 	fi
 
-	echo "Please stand by..."
-
-	export DEVROOT="/Developer/Platforms/${PLATFORM}.platform/Developer"
+	export DEVROOT="/Applications/Xcode.app/Contents/Developer/Platforms/${PLATFORM}.platform/Developer/"
 	export SDKROOT="${DEVROOT}/SDKs/${PLATFORM}${SDKVERSION}.sdk"
 	export CC="${DEVROOT}/usr/bin/gcc -arch ${ARCH}"
 	export LD=${DEVROOT}/usr/bin/ld
@@ -116,6 +113,9 @@ do
 
 	LOG="${CURRENTPATH}/bin/${PLATFORM}${SDKVERSION}-${ARCH}.sdk/build-gnutls-${VERSION}.log"
 
+        echo "Follow the build log with: tail -f ${LOG}"
+        echo "Please stand by..."
+
 	./configure --host=${ARCH}-apple-darwin --prefix="${CURRENTPATH}/bin/${PLATFORM}${SDKVERSION}-${ARCH}.sdk" ${EXTRA_CONFIGURE_FLAGS} --enable-shared=no --with-libgcrypt --with-libgcrypt-prefix="${CURRENTPATH}/bin/${PLATFORM}${SDKVERSION}-${ARCH}.sdk" >> "${LOG}" 2>&1
 
 	make >> "${LOG}" 2>&1
@@ -132,4 +132,4 @@ lipo -create ${CURRENTPATH}/bin/iPhoneSimulator${SDKVERSION}-i386.sdk/lib/libgnu
 lipo -create ${CURRENTPATH}/bin/iPhoneSimulator${SDKVERSION}-i386.sdk/lib/libgnutlsxx.a ${CURRENTPATH}/bin/iPhoneOS${SDKVERSION}-armv6.sdk/lib/libgnutlsxx.a ${CURRENTPATH}/bin/iPhoneOS${SDKVERSION}-armv7.sdk/lib/libgnutlsxx.a -output ${CURRENTPATH}/lib/libgnutlsxx.a
 
 cp -R ${CURRENTPATH}/bin/iPhoneSimulator${SDKVERSION}-i386.sdk/include/gnutls ${CURRENTPATH}/include/
-echo "Building done."
+echo "Static libraries available at lib/libgnutls*"
