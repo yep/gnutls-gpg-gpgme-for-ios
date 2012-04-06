@@ -1,4 +1,4 @@
-Build scripts for static ios libraries
+Build Scripts for Static iOS Libraries
 ======================================
 
 These build scripts can be used to compile static libraries for use with iOS. You can build apps with XCode and the official SDK from Apple with this.
@@ -12,6 +12,7 @@ To use the libraries, include the library from the created lib/ directory and he
 Tested with iOS SDK 5.1 (XCode 4.3.1) and OS X 10.7.3.
 
 Currently supported versions:
+
  * gnupg (gpg) - 1.4.11
  * libassuan - 2.0.3
  * libgcrypt - 1.5.0
