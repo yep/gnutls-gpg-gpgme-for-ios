@@ -22,13 +22,13 @@
 ###########################################################################
 #  Change values here
 #
-SDKVERSION="5.1"
+SDKVERSION="6.1"
 VERSION="2.12.14"
 #
 ###########################################################################
 #  No changes required beyond this point
 CURRENTPATH=`pwd`
-ARCHS="i386 armv6 armv7"
+ARCHS="i386 armv7"
 
 set -e
 if [ ! -e gnutls-${VERSION}.tar.bz2 ]; then
@@ -95,7 +95,7 @@ do
 	fi
 
 	export DEVROOT="/Applications/Xcode.app/Contents/Developer/Platforms/${PLATFORM}.platform/Developer/"
-	export SDKROOT="${DEVROOT}/SDKs/${PLATFORM}${SDKVERSION}.sdk"
+	export BUILD_SDKROOT="${DEVROOT}/SDKs/${PLATFORM}${SDKVERSION}.sdk"
 	export CC="${DEVROOT}/usr/bin/gcc -arch ${ARCH}"
 	export LD=${DEVROOT}/usr/bin/ld
 #	export CPP=${DEVROOT}/usr/bin/cpp
@@ -105,9 +105,9 @@ do
 	export NM=${DEVROOT}/usr/bin/nm
 #	export CXXCPP=$DEVROOT/usr/bin/cpp
 	export RANLIB=$DEVROOT/usr/bin/ranlib
-	export LDFLAGS="-arch ${ARCH} -pipe -no-cpp-precomp -isysroot ${SDKROOT} -L${CURRENTPATH}/lib"
-	export CFLAGS="-arch ${ARCH} -pipe -no-cpp-precomp -isysroot ${SDKROOT} -I${CURRENTPATH}/include"
-	export CXXFLAGS="-arch ${ARCH} -pipe -no-cpp-precomp -isysroot ${SDKROOT} -I${CURRENTPATH}/include"
+	export LDFLAGS="-arch ${ARCH} -pipe -no-cpp-precomp -isysroot ${BUILD_SDKROOT} -L${CURRENTPATH}/lib"
+	export CFLAGS="-arch ${ARCH} -pipe -no-cpp-precomp -isysroot ${BUILD_SDKROOT} -I${CURRENTPATH}/include"
+	export CXXFLAGS="-arch ${ARCH} -pipe -no-cpp-precomp -isysroot ${BUILD_SDKROOT} -I${CURRENTPATH}/include"
 
 	mkdir -p "${CURRENTPATH}/bin/${PLATFORM}${SDKVERSION}-${ARCH}.sdk"
 
@@ -126,10 +126,10 @@ do
 done
 
 echo "Build library..."
-lipo -create ${CURRENTPATH}/bin/iPhoneSimulator${SDKVERSION}-i386.sdk/lib/libgnutls.a ${CURRENTPATH}/bin/iPhoneOS${SDKVERSION}-armv6.sdk/lib/libgnutls.a ${CURRENTPATH}/bin/iPhoneOS${SDKVERSION}-armv7.sdk/lib/libgnutls.a -output ${CURRENTPATH}/lib/libgnutls.a
-lipo -create ${CURRENTPATH}/bin/iPhoneSimulator${SDKVERSION}-i386.sdk/lib/libgnutls-extra.a ${CURRENTPATH}/bin/iPhoneOS${SDKVERSION}-armv6.sdk/lib/libgnutls-extra.a ${CURRENTPATH}/bin/iPhoneOS${SDKVERSION}-armv7.sdk/lib/libgnutls-extra.a -output ${CURRENTPATH}/lib/libgnutls-extra.a
-lipo -create ${CURRENTPATH}/bin/iPhoneSimulator${SDKVERSION}-i386.sdk/lib/libgnutls-openssl.a ${CURRENTPATH}/bin/iPhoneOS${SDKVERSION}-armv6.sdk/lib/libgnutls-openssl.a ${CURRENTPATH}/bin/iPhoneOS${SDKVERSION}-armv7.sdk/lib/libgnutls-openssl.a -output ${CURRENTPATH}/lib/libgnutls-openssl.a
-lipo -create ${CURRENTPATH}/bin/iPhoneSimulator${SDKVERSION}-i386.sdk/lib/libgnutlsxx.a ${CURRENTPATH}/bin/iPhoneOS${SDKVERSION}-armv6.sdk/lib/libgnutlsxx.a ${CURRENTPATH}/bin/iPhoneOS${SDKVERSION}-armv7.sdk/lib/libgnutlsxx.a -output ${CURRENTPATH}/lib/libgnutlsxx.a
+lipo -create ${CURRENTPATH}/bin/iPhoneSimulator${SDKVERSION}-i386.sdk/lib/libgnutls.a ${CURRENTPATH}/bin/iPhoneOS${SDKVERSION}-armv7.sdk/lib/libgnutls.a -output ${CURRENTPATH}/lib/libgnutls.a
+lipo -create ${CURRENTPATH}/bin/iPhoneSimulator${SDKVERSION}-i386.sdk/lib/libgnutls-extra.a ${CURRENTPATH}/bin/iPhoneOS${SDKVERSION}-armv7.sdk/lib/libgnutls-extra.a -output ${CURRENTPATH}/lib/libgnutls-extra.a
+lipo -create ${CURRENTPATH}/bin/iPhoneSimulator${SDKVERSION}-i386.sdk/lib/libgnutls-openssl.a ${CURRENTPATH}/bin/iPhoneOS${SDKVERSION}-armv7.sdk/lib/libgnutls-openssl.a -output ${CURRENTPATH}/lib/libgnutls-openssl.a
+lipo -create ${CURRENTPATH}/bin/iPhoneSimulator${SDKVERSION}-i386.sdk/lib/libgnutlsxx.a ${CURRENTPATH}/bin/iPhoneOS${SDKVERSION}-armv7.sdk/lib/libgnutlsxx.a -output ${CURRENTPATH}/lib/libgnutlsxx.a
 
 cp -R ${CURRENTPATH}/bin/iPhoneSimulator${SDKVERSION}-i386.sdk/include/gnutls ${CURRENTPATH}/include/
 echo "Static libraries available at lib/libgnutls*"
