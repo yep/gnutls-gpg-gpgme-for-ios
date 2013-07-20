@@ -22,13 +22,13 @@
 ###########################################################################
 #  Change values here
 #
-SDKVERSION="5.1"
-VERSION="2.0.3"
+SDKVERSION="6.1"
+VERSION="2.1.1"
 #
 ###########################################################################
 #  No changes required beyond this point
 CURRENTPATH=`pwd`
-ARCHS="i386 armv6 armv7"
+ARCHS="i386 armv7"
 NAME=libassuan
 
 set -e
@@ -56,11 +56,11 @@ do
         rm -rf src/${NAME}-${VERSION}
 	tar zxf ${NAME}-${VERSION}.tar.bz2 -C src
 	cd src/${NAME}-${VERSION}
-	
+
 	echo "Building ${NAME} for ${PLATFORM} ${SDKVERSION} ${ARCH}"
 
 	export DEVROOT="/Applications/Xcode.app/Contents/Developer/Platforms/${PLATFORM}.platform/Developer/"
-	export SDKROOT="${DEVROOT}/SDKs/${PLATFORM}${SDKVERSION}.sdk"
+	export BUILD_SDKROOT="${DEVROOT}/SDKs/${PLATFORM}${SDKVERSION}.sdk"
 	export CC="${DEVROOT}/usr/bin/gcc -arch ${ARCH}"
 	export LD=${DEVROOT}/usr/bin/ld
 #	export CPP=${DEVROOT}/usr/bin/cpp
@@ -70,9 +70,9 @@ do
 	export NM=${DEVROOT}/usr/bin/nm
 #	export CXXCPP=$DEVROOT/usr/bin/cpp
 	export RANLIB=$DEVROOT/usr/bin/ranlib
-	export LDFLAGS="-arch ${ARCH} -pipe -no-cpp-precomp -isysroot ${SDKROOT} -L${CURRENTPATH}/lib"
-	export CFLAGS="-arch ${ARCH} -pipe -no-cpp-precomp -isysroot ${SDKROOT} -I${CURRENTPATH}/include"
-	export CXXFLAGS="-arch ${ARCH} -pipe -no-cpp-precomp -isysroot ${SDKROOT} -I${CURRENTPATH}/include"
+	export LDFLAGS="-arch ${ARCH} -pipe -no-cpp-precomp -isysroot ${BUILD_SDKROOT} -L${CURRENTPATH}/lib"
+	export CFLAGS="-arch ${ARCH} -pipe -no-cpp-precomp -isysroot ${BUILD_SDKROOT} -I${CURRENTPATH}/include"
+	export CXXFLAGS="-arch ${ARCH} -pipe -no-cpp-precomp -isysroot ${BUILD_SDKROOT} -I${CURRENTPATH}/include"
 
 	mkdir -p "${CURRENTPATH}/bin/${PLATFORM}${SDKVERSION}-${ARCH}.sdk"
 
@@ -91,7 +91,7 @@ do
 done
 
 echo "Build library..."
-lipo -create ${CURRENTPATH}/bin/iPhoneSimulator${SDKVERSION}-i386.sdk/lib/${NAME}.a ${CURRENTPATH}/bin/iPhoneOS${SDKVERSION}-armv6.sdk/lib/${NAME}.a ${CURRENTPATH}/bin/iPhoneOS${SDKVERSION}-armv7.sdk/lib/${NAME}.a -output ${CURRENTPATH}/lib/${NAME}.a
+lipo -create ${CURRENTPATH}/bin/iPhoneSimulator${SDKVERSION}-i386.sdk/lib/${NAME}.a ${CURRENTPATH}/bin/iPhoneOS${SDKVERSION}-armv7.sdk/lib/${NAME}.a -output ${CURRENTPATH}/lib/${NAME}.a
 mkdir -p ${CURRENTPATH}/include/${NAME}
 cp -R ${CURRENTPATH}/bin/iPhoneSimulator${SDKVERSION}-i386.sdk/include/assuan.h ${CURRENTPATH}/include/${NAME}
 echo "Static libary available at lib/${NAME}.a"
