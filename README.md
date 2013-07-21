@@ -5,7 +5,7 @@ These build scripts can be used to compile static libraries for use with iOS. Yo
 
 When run, the scripts download the respective source files, do simple dependency checks and compile.
 
-The resulting libraries are universal binaries for the following platforms: i386 and arm7. This means they can be used with all iOS devices including the simulator.
+The resulting libraries are universal binaries for the following platforms: i386 and arm7. This means they can be used with iPhone 3gs and newer. Last revision to support arm6 (original iPhone and iPhone 3g) is SHA: 30160d92a0d0051001113ab580bbde09ba52020d.
 
 To use the libraries, include the library from the created lib/ directory and header files from include/.
 
