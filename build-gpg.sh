@@ -22,22 +22,23 @@
 ###########################################################################
 #  Change values here
 #
-SDKVERSION="6.1"
-VERSION="1.4.13"
+SDKVERSION="7.1"
+VERSION="1.4.16"
 #
 ###########################################################################
 #  No changes required beyond this point
 #
 CURRENTPATH=`pwd`
-ARCHS="i386 armv7"
+ARCHS="i386 x86_64 armv7 armv7s arm64"
+DEVELOPER=`xcode-select -print-path`
 
 set -e
 if [ ! -e gnupg-${VERSION}.tar.bz2 ]; then
-	echo "Downloading gnupg-${VERSION}.tar.bz2"
-	curl -O ftp://ftp.gnupg.org/gcrypt/gnupg/gnupg-${VERSION}.tar.bz2
-	echo
+echo "Downloading gnupg-${VERSION}.tar.bz2"
+curl -O ftp://ftp.gnupg.org/gcrypt/gnupg/gnupg-${VERSION}.tar.bz2
+echo
 else
-	echo "Using gnupg-${VERSION}.tar.bz2"
+echo "Using gnupg-${VERSION}.tar.bz2"
 fi
 
 mkdir -p bin
@@ -45,60 +46,74 @@ mkdir -p src
 
 for ARCH in ${ARCHS}
 do
-	if [ "${ARCH}" == "i386" ];
-	then
-		PLATFORM="iPhoneSimulator"
-	else
-		PLATFORM="iPhoneOS"
-	fi
+if [[ "${ARCH}" == "i386" || "${ARCH}" == "x86_64" ]];
+then
+PLATFORM="iPhoneSimulator"
+else
+PLATFORM="iPhoneOS"
+fi
 
-	rm -rf src/gnupg-${VERSION}
-        echo "Building gnupg for ${PLATFORM} ${SDKVERSION} ${ARCH}"
-	tar zxf gnupg-${VERSION}.tar.bz2 -C src
-	cd src/gnupg-${VERSION}
-	
-        if [ "${VERSION}" == "1.4.11" ];
-        then
-                echo "Version ${VERSION} detected - Patch needed"
-                patch -p0 < ../../patches/libgcrypt-patch-1.4.6.diff
-        fi
+rm -rf src/gnupg-${VERSION}
+echo "Building gnupg for ${PLATFORM} ${SDKVERSION} ${ARCH}"
+tar zxf gnupg-${VERSION}.tar.bz2 -C src
+cd src/gnupg-${VERSION}
 
-	export DEVROOT="/Applications/Xcode.app/Contents/Developer/Platforms/${PLATFORM}.platform/Developer/"
-	export BUILD_SDKROOT="${DEVROOT}/SDKs/${PLATFORM}${SDKVERSION}.sdk"
-	export CC="${DEVROOT}/usr/bin/gcc -arch ${ARCH}"
-	export LD=${DEVROOT}/usr/bin/ld
-#	export CPP=${DEVROOT}/usr/bin/cpp
-	export CXX=${DEVROOT}/usr/bin/g++
-	export AR=${DEVROOT}/usr/bin/ar
-	export AS=${DEVROOT}/usr/bin/as
-	export NM=${DEVROOT}/usr/bin/nm
-#	export CXXCPP=$DEVROOT/usr/bin/cpp
-	export RANLIB=$DEVROOT/usr/bin/ranlib
-	export LDFLAGS="-arch ${ARCH} -pipe -no-cpp-precomp -isysroot ${BUILD_SDKROOT} -L${CURRENTPATH}/lib"
-	export CFLAGS="-arch ${ARCH} -pipe -no-cpp-precomp -isysroot ${BUILD_SDKROOT} -I${CURRENTPATH}/include"
-	export CXXFLAGS="-arch ${ARCH} -pipe -no-cpp-precomp -isysroot ${BUILD_SDKROOT} -I${CURRENTPATH}/include"
+if [ "${VERSION}" == "1.4.11" ];
+then
+echo "Version ${VERSION} detected - Patch needed"
+patch -p0 < ../../patches/libgcrypt-patch-1.4.6.diff
+fi
 
-	mkdir -p "${CURRENTPATH}/bin/${PLATFORM}${SDKVERSION}-${ARCH}.sdk"
+export BUILD_DEVROOT="${DEVELOPER}/Platforms/${PLATFORM}.platform/Developer"
+export BUILD_SDKROOT="${BUILD_DEVROOT}/SDKs/${PLATFORM}${SDKVERSION}.sdk"
+export LD=${BUILD_DEVROOT}/usr/bin/ld
+export CC="${DEVELOPER}/usr/bin/gcc -arch ${ARCH} -fheinous-gnu-extensions"
+export CXX=${DEVELOPER}/usr/bin/g++
 
-	LOG="${CURRENTPATH}/bin/${PLATFORM}${SDKVERSION}-${ARCH}.sdk/build-gnupg-${VERSION}.log"
+if [[ "${ARCH}" == "i386" || "${ARCH}" == "x86_64" ]];
+then
+export AR=${DEVELOPER}/Toolchains/XcodeDefault.xctoolchain/usr/bin/ar
+export AS=${DEVELOPER}/Toolchains/XcodeDefault.xctoolchain/usr/bin/as
+export NM=${DEVELOPER}/Toolchains/XcodeDefault.xctoolchain/usr/bin/nm
+export RANLIB=${DEVELOPER}/Toolchains/XcodeDefault.xctoolchain/usr/bin/ranlib
+else
+export AR=${BUILD_DEVROOT}/usr/bin/ar
+export AS=${BUILD_DEVROOT}/usr/bin/as
+export NM=${BUILD_DEVROOT}/usr/bin/nm
+export RANLIB=${BUILD_DEVROOT}/usr/bin/ranlib
+export CPP=${DEVELOPER}/Toolchains/XcodeDefault.xctoolchain/usr/bin/cpp
+fi
 
-        echo "Follow the build log with: tail -f ${LOG}"
-        echo "Please stand by..."
+export LDFLAGS="-arch ${ARCH} -pipe -no-cpp-precomp -isysroot ${BUILD_SDKROOT} -L/usr/local/opt/gcc48/lib"
+export CFLAGS="-arch ${ARCH} -pipe -no-cpp-precomp -isysroot ${BUILD_SDKROOT} -I${CURRENTPATH}/include"
+export CXXFLAGS="-arch ${ARCH} -pipe -no-cpp-precomp -isysroot ${SDKROOT} -I/usr/local/include -miphoneos-version-min=7.0 -fheinous-gnu-extensions"
 
-#	./configure --host=${ARCH}-apple-darwin --prefix="${CURRENTPATH}/bin/${PLATFORM}${SDKVERSION}-${ARCH}.sdk" ${EXTRA_CONFIGURE_FLAGS} --disable-asm --enable-minimal --disable-optimization  >> "${LOG}" 2>&1
-	./configure --host=${ARCH}-apple-darwin --prefix="${CURRENTPATH}/bin/${PLATFORM}${SDKVERSION}-${ARCH}.sdk" ${EXTRA_CONFIGURE_FLAGS}  --disable-dependency-tracking >> "${LOG}" 2>&1
-	
-	mv "Makefile" "Makefile~"
-	sed '/checks =/d' "Makefile~" > "Makefile"  # Patch Makefile to disable checks
+HOST=${ARCH}
+if [ "${ARCH}" == "arm64" ];
+then
+HOST="aarch64"
+fi
 
-	make >> "${LOG}" 2>&1
-	make install >> "${LOG}" 2>&1
-	cd ${CURRENTPATH}
-	rm -rf src/gnupg-${VERSION}
+mkdir -p "${CURRENTPATH}/bin/${PLATFORM}${SDKVERSION}-${ARCH}.sdk"
+
+LOG="${CURRENTPATH}/bin/${PLATFORM}${SDKVERSION}-${ARCH}.sdk/build-gnupg-${VERSION}.log"
+
+echo "Follow the build log with: tail -f ${LOG}"
+echo "Please stand by..."
+
+./configure --host=${HOST}-apple-darwin --prefix="${CURRENTPATH}/bin/${PLATFORM}${SDKVERSION}-${ARCH}.sdk" ${EXTRA_CONFIGURE_FLAGS} --disable-dependency-tracking >> "${LOG}" 2>&1
+
+mv "Makefile" "Makefile~"
+sed '/checks =/d' "Makefile~" > "Makefile"  # Patch Makefile to disable checks
+
+make >> "${LOG}" 2>&1
+make install >> "${LOG}" 2>&1
+cd ${CURRENTPATH}
+rm -rf src/gnupg-${VERSION}
 done
 
 echo "Build executable..."
-lipo -create ${CURRENTPATH}/bin/iPhoneSimulator${SDKVERSION}-i386.sdk/bin/gpg ${CURRENTPATH}/bin/iPhoneOS${SDKVERSION}-armv7.sdk/bin/gpg -output ${CURRENTPATH}/bin/gpg
+lipo -create ${CURRENTPATH}/bin/iPhoneSimulator${SDKVERSION}-i386.sdk/bin/gpg ${CURRENTPATH}/bin/iPhoneSimulator${SDKVERSION}-x86_64.sdk/bin/gpg ${CURRENTPATH}/bin/iPhoneOS${SDKVERSION}-armv7.sdk/bin/gpg ${CURRENTPATH}/bin/iPhoneOS${SDKVERSION}-armv7s.sdk/bin/gpg ${CURRENTPATH}/bin/iPhoneOS${SDKVERSION}-arm64.sdk/bin/gpg -output ${CURRENTPATH}/bin/gpg
 
-#cp -R ${CURRENTPATH}/bin/iPhoneSimulator${SDKVERSION}-i386.sdk/include/g ${CURRENTPATH}/include/
+cp -R ${CURRENTPATH}/bin/iPhoneSimulator${SDKVERSION}-i386.sdk/include/g ${CURRENTPATH}/include/
 echo "Executable available at bin/gpg"
