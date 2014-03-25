@@ -22,45 +22,46 @@
 ###########################################################################
 #  Change values here
 #
-SDKVERSION="6.1"
-VERSION="1.4.2"
+SDKVERSION="7.1"
+VERSION="1.4.3"
 #
 ###########################################################################
 #  No changes required beyond this point
 CURRENTPATH=`pwd`
-ARCHS="i386 armv7"
+ARCHS="i386 armv7 armv7s"
 NAME="gpgme"
+DEVELOPER=`xcode-select -print-path`
 
 set -e
 if [ ! -e ${NAME}-${VERSION}.tar.bz2 ]; then
-	echo "Downloading ${NAME}-${VERSION}.tar.bz2"
-    curl -O ftp://ftp.gnupg.org/gcrypt/${NAME}/${NAME}-${VERSION}.tar.bz2
+echo "Downloading ${NAME}-${VERSION}.tar.bz2"
+curl -O ftp://ftp.gnupg.org/gcrypt/${NAME}/${NAME}-${VERSION}.tar.bz2
 else
-	echo "Using ${NAME}-${VERSION}.tar.bz2"
+echo "Using ${NAME}-${VERSION}.tar.bz2"
 fi
 
 if [ -f ${CURRENTPATH}/lib/libgpg-error.a ];
 then
-  echo "Using libgpg-error."
+echo "Using libgpg-error."
 else
-  echo "Please build libgpg-error first."
-  exit 1
+echo "Please build libgpg-error first."
+exit 1
 fi
 
 if [ -f ${CURRENTPATH}/lib/libassuan.a ];
-then 
-  echo "Using libasuan."
+then
+echo "Using libasuan."
 else
-  echo "Please build libassuan first."
-  exit 1
+echo "Please build libassuan first."
+exit 1
 fi
 
 if [ -f ${CURRENTPATH}/bin/gpg ];
 then
-  echo "Using gpg."
+echo "Using gpg."
 else
-  echo "Please build gpg first."
-  exit 1
+echo "Please build gpg first."
+exit 1
 fi
 
 mkdir -p bin
@@ -69,52 +70,66 @@ mkdir -p src
 
 for ARCH in ${ARCHS}
 do
-	if [ "${ARCH}" == "i386" ];
-	then
-		PLATFORM="iPhoneSimulator"
-	else
-		PLATFORM="iPhoneOS"
-	fi
+if [[ "${ARCH}" == "i386" || "${ARCH}" == "x86_64" ]];
+then
+PLATFORM="iPhoneSimulator"
+else
+PLATFORM="iPhoneOS"
+fi
 
-	rm -rf src/${NAME}-${VERSION}
-	tar zxf ${NAME}-${VERSION}.tar.bz2 -C src
-	cd src/${NAME}-${VERSION}
-	
-	echo "Building ${NAME} for ${PLATFORM} ${SDKVERSION} ${ARCH}"
+rm -rf src/${NAME}-${VERSION}
+tar zxf ${NAME}-${VERSION}.tar.bz2 -C src
+cd src/${NAME}-${VERSION}
 
-	export DEVROOT="/Applications/Xcode.app/Contents/Developer/Platforms/${PLATFORM}.platform/Developer/"
-	export BUILD_SDKROOT="${DEVROOT}/SDKs/${PLATFORM}${SDKVERSION}.sdk"
-	export CC="${DEVROOT}/usr/bin/gcc -arch ${ARCH}"
-	export LD=${DEVROOT}/usr/bin/ld
-#	export CPP=${DEVROOT}/usr/bin/cpp
-	export CXX=${DEVROOT}/usr/bin/g++
-	export AR=${DEVROOT}/usr/bin/ar
-	export AS=${DEVROOT}/usr/bin/as
-	export NM=${DEVROOT}/usr/bin/nm
-#	export CXXCPP=$DEVROOT/usr/bin/cpp
-	export RANLIB=$DEVROOT/usr/bin/ranlib
-	export LDFLAGS="-arch ${ARCH} -pipe -no-cpp-precomp -isysroot ${BUILD_SDKROOT} -L${CURRENTPATH}/lib"
-	export CFLAGS="-arch ${ARCH} -pipe -no-cpp-precomp -isysroot ${BUILD_SDKROOT} -I${CURRENTPATH}/include"
-	export CXXFLAGS="-arch ${ARCH} -pipe -no-cpp-precomp -isysroot ${BUILD_SDKROOT} -I${CURRENTPATH}/include"
+echo "Building ${NAME} for ${PLATFORM} ${SDKVERSION} ${ARCH}"
 
-	mkdir -p "${CURRENTPATH}/bin/${PLATFORM}${SDKVERSION}-${ARCH}.sdk"
+export BUILD_DEVROOT="${DEVELOPER}/Platforms/${PLATFORM}.platform/Developer"
+export BUILD_SDKROOT="${BUILD_DEVROOT}/SDKs/${PLATFORM}${SDKVERSION}.sdk"
+export LD=${BUILD_DEVROOT}/usr/bin/ld
+export CC=${DEVELOPER}/usr/bin/gcc
+export CXX=${DEVELOPER}/usr/bin/g++
+if [[ "${ARCH}" == "i386" || "${ARCH}" == "x86_64" ]];
+then
+export AR=${DEVELOPER}/Toolchains/XcodeDefault.xctoolchain/usr/bin/ar
+export AS=${DEVELOPER}/Toolchains/XcodeDefault.xctoolchain/usr/bin/as
+export NM=${DEVELOPER}/Toolchains/XcodeDefault.xctoolchain/usr/bin/nm
+export RANLIB=${DEVELOPER}/Toolchains/XcodeDefault.xctoolchain/usr/bin/ranlib
+else
+export AR=${BUILD_DEVROOT}/usr/bin/ar
+export AS=${BUILD_DEVROOT}/usr/bin/as
+export NM=${BUILD_DEVROOT}/usr/bin/nm
+export RANLIB=${BUILD_DEVROOT}/usr/bin/ranlib
+export CPP=${DEVELOPER}/Toolchains/XcodeDefault.xctoolchain/usr/bin/cpp
+fi
 
-	LOG="${CURRENTPATH}/bin/${PLATFORM}${SDKVERSION}-${ARCH}.sdk/build-${NAME}-${VERSION}.log"
+export LDFLAGS="-arch ${ARCH} -pipe -no-cpp-precomp -isysroot ${BUILD_SDKROOT} -L${CURRENTPATH}/lib -miphoneos-version-min=7.0 -stdlib=libstdc++ -lstdc++"
+export CFLAGS="-arch ${ARCH} -pipe -no-cpp-precomp -isysroot ${BUILD_SDKROOT} -I${CURRENTPATH}/include -miphoneos-version-min=7.0 -stdlib=libstdc++ -lstdc++"
+export CXXFLAGS="-arch ${ARCH} -pipe -no-cpp-precomp -isysroot ${BUILD_SDKROOT} -I${CURRENTPATH}/include -miphoneos-version-min=7.0 -stdlib=libstdc++ -lstdc++"
 
-	echo "Follow the build log with: tail -f ${LOG}"
-	echo "Please stand by..."
+HOST=${ARCH}
+if [ "${ARCH}" == "arm64" ];
+then
+HOST="aarch64"
+fi
 
-	./configure --host=${ARCH}-apple-darwin --prefix="${CURRENTPATH}/bin/${PLATFORM}${SDKVERSION}-${ARCH}.sdk" ${EXTRA_CONFIGURE_FLAGS} --enable-static --with-libassuan-prefix="${CURRENTPATH}/bin/${PLATFORM}${SDKVERSION}-${ARCH}.sdk" --with-gpg="${CURRENTPATH}/bin/gpg" --with-gpgsm= --with-gpgconf= --with-g13= >> "${LOG}" 2>&1
-	
-	make >> "${LOG}" 2>&1
-	make install >> "${LOG}" 2>&1
-	cd ${CURRENTPATH}
-	rm -rf src/${NAME}-${VERSION}
-	
+mkdir -p "${CURRENTPATH}/bin/${PLATFORM}${SDKVERSION}-${ARCH}.sdk"
+
+LOG="${CURRENTPATH}/bin/${PLATFORM}${SDKVERSION}-${ARCH}.sdk/build-${NAME}-${VERSION}.log"
+
+echo "Follow the build log with: tail -f ${LOG}"
+echo "Please stand by..."
+
+./configure --host=${HOST}-apple-darwin --prefix="${CURRENTPATH}/bin/${PLATFORM}${SDKVERSION}-${ARCH}.sdk" ${EXTRA_CONFIGURE_FLAGS} --with-libgpg-error-prefix="${CURRENTPATH}/bin/${PLATFORM}${SDKVERSION}-${ARCH}.sdk" --with-libassuan-prefix="${CURRENTPATH}/bin/${PLATFORM}${SDKVERSION}-${ARCH}.sdk" --enable-largefile --enable-static --disable-shared --with-gpg="${CURRENTPATH}/bin/gpg" --with-gpgsm= --with-gpgconf= --with-g13= >> "${LOG}" 2>&1
+
+make >> "${LOG}" 2>&1
+make install >> "${LOG}" 2>&1
+cd ${CURRENTPATH}
+rm -rf src/${NAME}-${VERSION}
+
 done
 
 echo "Build library..."
-lipo -create ${CURRENTPATH}/bin/iPhoneSimulator${SDKVERSION}-i386.sdk/lib/lib${NAME}.a ${CURRENTPATH}/bin/iPhoneOS${SDKVERSION}-armv7.sdk/lib/lib${NAME}.a -output ${CURRENTPATH}/lib/lib${NAME}.a
+lipo -create ${CURRENTPATH}/bin/iPhoneSimulator${SDKVERSION}-i386.sdk/lib/lib${NAME}.a ${CURRENTPATH}/bin/iPhoneOS${SDKVERSION}-armv7.sdk/lib/lib${NAME}.a ${CURRENTPATH}/bin/iPhoneOS${SDKVERSION}-armv7s.sdk/lib/lib${NAME}.a -output ${CURRENTPATH}/lib/lib${NAME}.a
 
 cp -R ${CURRENTPATH}/bin/iPhoneSimulator${SDKVERSION}-i386.sdk/include/${NAME}.h ${CURRENTPATH}/include/
 echo "Static library available at lib/lib${NAME}.a"
